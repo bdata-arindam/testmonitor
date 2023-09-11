@@ -1,0 +1,11 @@
+requests==2.26.0
+schedule==1.1.0
+mysql-connector-python==8.0.27  # Required only if using MySQL database
+This requirements.txt file lists the necessary packages and their versions. You can use this file with pip to install the required packages for your project.
+
+To install the packages, you can run the following command in your project directory:
+
+bash
+Copy code
+pip install -r requirements.txt
+Make sure to keep this file up to date with the specific package versions your project depends on.
