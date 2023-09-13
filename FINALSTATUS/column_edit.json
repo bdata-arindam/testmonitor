@@ -1,0 +1,22 @@
+[
+    "Cluster",
+    "Druid Version",
+    "Coordinator",
+    "Datasources",
+    "Segments",
+    "Unavailable Segments",
+    "Total Supervisor",
+    "Paused Supervisor",
+    "Tasks",
+    "Failed Tasks",
+    "Pending Tasks",
+    "MiddleManager",
+    "Historical",
+    "Peon Tasks",
+    "Running Peon Tasks",
+    "Extensions",
+    "Storage (Used %)",
+    "Memory (Used %)",
+    "Threads (Used %)",
+    "Health"
+]

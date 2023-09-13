@@ -1,0 +1,78 @@
+[
+    {
+        "enabled": true,
+        "threshold": 90
+    },
+    {
+        "enabled": true,
+        "threshold": 90
+    },
+    {
+        "enabled": true,
+        "threshold": 90
+    },
+    {
+        "enabled": true,
+        "threshold": 90
+    },
+    {
+        "enabled": true,
+        "threshold": 90
+    },
+    {
+        "enabled": true,
+        "threshold": 90
+    },
+    {
+        "enabled": true,
+        "threshold": 90
+    },
+    {
+        "enabled": true,
+        "threshold": 90
+    },
+    {
+        "enabled": true,
+        "threshold": 90
+    },
+    {
+        "enabled": true,
+        "threshold": 2000
+    },
+    {
+        "enabled": true,
+        "threshold": 2000
+    },
+    {
+        "enabled": true,
+        "threshold": 2000
+    },
+    {
+        "enabled": true,
+        "threshold": 2000
+    },
+    {
+        "enabled": true,
+        "threshold": 2000
+    },
+    {
+        "enabled": true,
+        "threshold": 2000
+    },
+    {
+        "enabled": true,
+        "threshold": 2000
+    },
+    {
+        "enabled": true,
+        "threshold": 90
+    },
+    {
+        "enabled": true,
+        "threshold": 90
+    },
+    {
+        "enabled": true,
+        "threshold": 90
+    }
+]

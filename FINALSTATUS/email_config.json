@@ -1,0 +1,29 @@
+{
+    "sender_email": "your_sender_email@your_domain.com",
+    "receiver_emails": ["user1@example.com", "user2@example.com"],
+    "smtp_server": "your_smtp_server",
+    "column_names": [
+        "Cluster Name",
+        "Druid Version",
+        "Coordinator Status",
+        "Total Datasources",
+        "Total Segments",
+        "Unavailable Segments",
+        "Total Supervisor",
+        "Paused Supervisor",
+        "Tasks Details",
+        "Failed Task Count",
+        "Pending Task Count",
+        "Number of MiddleManager",
+        "Number of Historical",
+        "Total Peon Task Configured",
+        "Total Peon Task Running",
+        "Total Number of Extension",
+        "Total Storage of Historical (Used %)",
+        "Total Memory Used by Historical (Used %)",
+        "Total Threads Used by MiddleManager (Used %)",
+        "Cluster Health"
+    ],
+    "email_intervals": 3600,  # Interval in seconds (1 hour)
+    "attach_csv": true
+}
