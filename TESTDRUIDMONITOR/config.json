@@ -1,0 +1,18 @@
+{
+    "cluster_name": "My Druid Cluster",
+    "router_url": "https://druid-router-url.example.com",
+    "smtp_user": "",            // Leave empty for corporate portal
+    "recipient_email": "recipient@example.com",
+    "smtp_server": "smtp.example.com",
+    "smtp_port": 587,
+    "smtp_password": "",        // Leave empty for corporate portal
+    "execution_interval": 30,
+    "enable_database": true,
+    "database_type": "sqlite",
+    "database_name": "metrics_db",
+    "database_host": "localhost",
+    "database_username": "db_user",
+    "database_password": "db_password",
+    "retry_count": 5
+  }
+  
