@@ -1,13 +1,17 @@
 {
     "kafka_config": {
-      "bootstrap.servers": "your_kafka_bootstrap_servers",
-      "security.protocol": "SASL_SSL",  // Use SASL_SSL for Kerberos and SSL-based clusters
-      "sasl.mechanism": "GSSAPI",       // Mechanism for Kerberos
-      "sasl.kerberos.service.name": "kafka",
-      "ssl.ca.location": "path/to/ca_certificate",
-      "ssl.certificate.location": "path/to/client_certificate",
-      "ssl.key.location": "path/to/client_key"
-    },
+    "bootstrap.servers": "your_kafka_bootstrap_servers",
+    "security.protocol": "SASL_SSL",  // Use SASL_SSL for Kerberos and SSL-based clusters
+    "sasl.mechanism": "GSSAPI",       // Mechanism for Kerberos
+    "sasl.kerberos.service.name": "kafka",
+    "ssl.truststore.location": "path/to/truststore.jks",
+    "ssl.truststore.password": "your_truststore_password",
+    "ssl.keystore.location": "path/to/keystore.jks",
+    "ssl.keystore.password": "your_keystore_password",
+    "ssl.key.password": "your_key_password",
+    "sasl.kerberos.keytab": "path/to/your.keytab",  // Specify the path to your keytab file
+    "sasl.kerberos.principal": "your-principal@EXAMPLE.COM"  // Specify your Kerberos principal
+  },
     "max_memory_percentage": 20,
     "max_threads": 10,
     "output_format": "table",
