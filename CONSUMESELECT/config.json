@@ -1,0 +1,21 @@
+{
+    "kafka_config": {
+      "bootstrap.servers": "your_kafka_bootstrap_servers",
+      "security.protocol": "SASL_SSL",  // Use SASL_SSL for Kerberos and SSL-based clusters
+      "sasl.mechanism": "GSSAPI",       // Mechanism for Kerberos
+      "sasl.kerberos.service.name": "kafka",
+      "ssl.ca.location": "path/to/ca_certificate",
+      "ssl.certificate.location": "path/to/client_certificate",
+      "ssl.key.location": "path/to/client_key"
+    },
+    "max_memory_percentage": 20,
+    "max_threads": 10,
+    "output_format": "table",
+    "output_to_module": false,
+    "module_name": "output_module",  // Specify the module name if using an output module
+    "module_location": "path/to/output_module_directory",  // Specify the module location
+    "log_location": "logs/",
+    "kafka_select_file": "kafka_select.json",
+    "kafka_topic": "your_kafka_topic"
+  }
+  

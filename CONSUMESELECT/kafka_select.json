@@ -1,0 +1,8 @@
+{
+    "select_queries": {
+      "query1": "SELECT * FROM topic WHERE topic_column = 'value'",
+      "query2": "SELECT * FROM topic WHERE topic_column LIKE 'pattern%'",
+      "query3": "SELECT * FROM topic WHERE topic_column IN ('value1', 'value2', 'value3')"
+    }
+  }
+  
