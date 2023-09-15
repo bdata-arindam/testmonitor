@@ -163,22 +163,30 @@ if __name__ == "__main__":
         # Record the end time
         end_time = pd.Timestamp.now()
 
-        # Select the best model based on accuracy
-        best_model = max(results, key=results.get)
-        best_accuracy = results[best_model]
+        if results:
+            # Select the best model based on accuracy
+            best_model = max(results, key=results.get)
+            best_accuracy = results[best_model]
 
-        logger.info(f"The best model is '{best_model}' with an accuracy of {best_accuracy:.2%}")
+            logger.info(f"The best model is '{best_model}' with an accuracy of {best_accuracy:.2%}")
 
-        # Store the best model and threshold in the specified JSON file
-        threshold = np.percentile(data[f'{best_model}_anomaly_score'], 5)  # Adjust the percentile as needed
-        best_model_data = {
-            'model_type': best_model,
-            'model_params': models[best_model].get_params(),
-            'threshold': float(threshold)
-        }
+            # Store the best model and threshold in the specified JSON file
+            threshold = np.percentile(data[f'{best_model}_anomaly_score'], 5)  # Adjust the percentile as needed
+            best_model_data = {
+                'model_type': best_model,
+                'model_params': models[best_model].get_params(),
+                'threshold': float(threshold)
+            }
 
-        with open(best_model_json_filename, 'w') as json_file:
-            json.dump(best_model_data, json_file)
+            with open(best_model_json_filename, 'w') as json_file:
+                json.dump(best_model_data, json_file)
+        else:
+            logger.warning("No valid results to select the best model. Using user input from config.json.")
+            best_model = config.get('default_best_model', None)
+            if best_model:
+                logger.info(f"Using user-defined best model: '{best_model}'")
+            else:
+                logger.error("No valid model selected or provided in config.json.")
 
         if email_notification:
             message = "TRAINING COMPLETED FOR ANOMALY TRAINING\n\n" \
