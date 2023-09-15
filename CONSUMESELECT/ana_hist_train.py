@@ -40,10 +40,11 @@ def load_and_preprocess_data(data_filename, feature_engineering_filename, timest
             # Load feature engineering data from another CSV file
             feature_engineering_df = pd.read_csv(feature_engineering_filename)
 
-            # Assuming your feature engineering data has columns: 'timestamp', 'is_holiday', 'is_weekend', 'is_national_holiday'
+            # Ensure 'timestamp' column in feature_engineering_df is of datetime64[ns] data type
+            feature_engineering_df['timestamp'] = pd.to_datetime(feature_engineering_df['timestamp'])
 
             # Merge the historical volume data with feature engineering data based on the 'timestamp'
-            historical_df = historical_df.merge(feature_engineering_df, on='timestamp', how='left')
+            historical_df = pd.concat([historical_df, feature_engineering_df.set_index('timestamp')], axis=1, join='inner')
         else:
             historical_df['is_holiday'] = 0
             historical_df['is_weekend'] = historical_df.index.dayofweek >= 5
