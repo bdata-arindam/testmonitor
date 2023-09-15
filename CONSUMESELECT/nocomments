@@ -1,0 +1,134 @@
+import json
+import pandas as pd
+from sklearn.ensemble import IsolationForest
+from sklearn.svm import OneClassSVM
+import numpy as np
+import psutil
+import multiprocessing
+import logging
+import sys
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+logging.basicConfig(filename='anomaly_detection.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+def load_and_preprocess_data(data_filename, feature_engineering_filename, timestamp_column, volume_column):
+    try:
+        historical_df = pd.read_csv(data_filename)
+        historical_df = historical_df[[timestamp_column, volume_column]]
+        historical_df = historical_df.rename(columns={timestamp_column: 'timestamp', volume_column: 'volume'})
+        historical_df['timestamp'] = pd.to_datetime(historical_df['timestamp'])
+        historical_df.set_index('timestamp', inplace=True)
+        if feature_engineering_filename:
+            feature_engineering_df = pd.read_csv(feature_engineering_filename)
+            feature_engineering_df['timestamp'] = pd.to_datetime(feature_engineering_df['timestamp'])
+            historical_df = pd.concat([historical_df, feature_engineering_df.set_index('timestamp')], axis=1, join='inner')
+        else:
+            historical_df['is_holiday'] = 0
+            historical_df['is_weekend'] = historical_df.index.dayofweek >= 5
+            historical_df['is_national_holiday'] = 0
+        return historical_df
+
+def train_and_evaluate_models(data, models, max_memory_percentage, max_thread_count):
+    results = {}
+    train_size = int(len(data) * 0.8)
+    train_data = data.iloc[:train_size]
+    test_data = data.iloc[train_size:]
+    for model_name in models:
+        data[f'{model_name}_anomaly_score'] = np.nan
+    def process_model(model_name, model):
+        try:
+            model.fit(train_data[['volume', 'is_holiday', 'is_weekend', 'is_national_holiday']])
+            test_scores = model.decision_function(test_data[['volume', 'is_holiday', 'is_weekend', 'is_national_holiday']])
+            accuracy = evaluate(test_scores)
+            results[model_name] = accuracy
+            data[f'{model_name}_anomaly_score'].iloc[train_size:] = test_scores
+        except Exception as e:
+            logger.error(f"Error while processing {model_name} model: {str(e)}")
+    pool = multiprocessing.Pool(processes=max_thread_count)
+    for model_name, model in models.items():
+        pool.apply_async(process_model, (model_name, model))
+    pool.close()
+    pool.join()
+    return results
+
+def evaluate(scores):
+    threshold = 0.0
+    anomalies = (scores < threshold).sum()
+    total_samples = len(scores)
+    accuracy = 1.0 - (anomalies / total_samples)
+    return accuracy
+
+def send_email(to_email, from_email, subject, message, smtp_server):
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = from_email
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        body = f"{message}\n\nTraining Start Time: {start_time}\nTraining End Time: {end_time}\nBest Model: {best_model}\n\nModel Details:\n"
+        for model_name, accuracy in results.items():
+            body += f"{model_name} - Accuracy: {accuracy:.2%}\n"
+        msg.attach(MIMEText(body, 'plain'))
+        server = smtplib.SMTP(smtp_server)
+        server.starttls()
+        server.login(from_email, "")
+        text = msg.as_string()
+        server.sendmail(from_email, to_email, text)
+        server.quit()
+    except Exception as e:
+        logger.error(f"Error sending email notification: {str(e)}")
+
+if __name__ == "__main__":
+    try:
+        with open('config.json', 'r') as config_file:
+            config = json.load(config_file)
+        data_filename = config.get('data_filename', 'historical_volume_data.csv')
+        feature_engineering_filename = config.get('feature_engineering_filename', None)
+        timestamp_column = config.get('timestamp_column', 'timestamp')
+        volume_column = config.get('volume_column', 'volume')
+        max_memory_percentage = config.get('max_memory_percentage', 50)
+        max_thread_count = config.get('max_thread_count', multiprocessing.cpu_count())
+        best_model_json_filename = config.get('best_model_json_filename', 'best_anomaly_model.json')
+        email_notification = config.get('email_notification', False)
+        email_to = config.get('email_to', 'recipient@example.com')
+        email_from = config.get('email_from', 'sender@example.com')
+        email_subject = config.get('email_subject', 'Anomaly Detection Training Completed')
+        smtp_server = config.get('smtp_server', 'smtp.example.com')
+        models = {
+            'Isolation Forest': IsolationForest(contamination=0.01),
+            'One-Class SVM': OneClassSVM(nu=0.01)
+        }
+        data = load_and_preprocess_data(data_filename, feature_engineering_filename, timestamp_column, volume_column)
+        start_time = pd.Timestamp.now()
+        results = train_and_evaluate_models(data, models, max_memory_percentage, max_thread_count)
+        end_time = pd.Timestamp.now()
+        if results:
+            best_model = max(results, key=results.get)
+            best_accuracy = results[best_model]
+            threshold = np.percentile(data[f'{best_model}_anomaly_score'], 5)
+            best_model_data = {
+                'model_type': best_model,
+                'model_params': models[best_model].get_params(),
+                'threshold': float(threshold)
+            }
+            with open(best_model_json_filename, 'w') as json_file:
+                json.dump(best_model_data, json_file)
+        else:
+            logger.warning("No valid results to select the best model. Using user input from config.json.")
+            best_model = config.get('default_best_model')
+            if best_model:
+                logger.info(f"Using user-defined best model: '{best_model}'")
+            else:
+                logger.error("No valid model selected or provided in config.json.")
+        if email_notification:
+            message = "TRAINING COMPLETED FOR ANOMALY TRAINING\n\n" \
+                      "Training completed successfully. Here are the details:\n" \
+                      f"Best Model: {best_model}\n" \
+                      f"Training Start Time: {start_time}\n" \
+                      f"Training End Time: {end_time}\n"
+            send_email(email_to, email_from, email_subject, message, smtp_server)
+    except Exception as e:
+        logger.error(f"Error: {str(e)}")
+        sys.exit(1)
