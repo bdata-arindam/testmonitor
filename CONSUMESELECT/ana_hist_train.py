@@ -51,6 +51,57 @@ def load_and_preprocess_data(data_filename, feature_engineering_filename, timest
 
         return historical_df
 
+# Function to train and evaluate models
+def train_and_evaluate_models(data, models, max_memory_percentage, max_thread_count):
+    results = {}
+
+    # Split data into train and test sets (you can customize this)
+    train_size = int(len(data) * 0.8)
+    train_data = data.iloc[:train_size]
+    test_data = data.iloc[train_size:]
+
+    # Ensure the model scores are not overwritten by other columns
+    for model_name in models:
+        data[f'{model_name}_anomaly_score'] = np.nan
+
+    # Parallel processing to train and evaluate models
+    def process_model(model_name, model):
+        try:
+            logger.info(f"Training {model_name} model...")
+            model.fit(train_data[['volume', 'is_holiday', 'is_weekend', 'is_national_holiday']])
+            logger.info(f"Evaluating {model_name} model...")
+            test_scores = model.decision_function(test_data[['volume', 'is_holiday', 'is_weekend', 'is_national_holiday']])
+            # Use your evaluation metric here
+            accuracy = evaluate(test_scores)  # Implement your own evaluation logic
+            results[model_name] = accuracy
+            data[f'{model_name}_anomaly_score'].iloc[train_size:] = test_scores
+            logger.info(f"{model_name} model trained and evaluated with accuracy: {accuracy:.2%}")
+        except Exception as e:
+            logger.error(f"Error while processing {model_name} model: {str(e)}")
+
+    # Create a pool of worker processes
+    pool = multiprocessing.Pool(processes=max_thread_count)
+
+    # Perform parallel processing for each model
+    for model_name, model in models.items():
+        pool.apply_async(process_model, (model_name, model))
+
+    # Close the pool and wait for all processes to complete
+    pool.close()
+    pool.join()
+
+    return results
+
+# Function to evaluate model results (you should customize this)
+def evaluate(scores):
+    # Implement your own evaluation logic here
+    # For example, you can use a threshold to classify anomalies
+    threshold = 0.0
+    anomalies = (scores < threshold).sum()
+    total_samples = len(scores)
+    accuracy = 1.0 - (anomalies / total_samples)
+    return accuracy
+
 # Function to send email notification
 def send_email(to_email, from_email, subject, message, smtp_server):
     try:
@@ -73,9 +124,6 @@ def send_email(to_email, from_email, subject, message, smtp_server):
         server.quit()
     except Exception as e:
         logger.error(f"Error sending email notification: {str(e)}")
-
-# Rest of the code remains the same
-# ...
 
 if __name__ == "__main__":
     try:
