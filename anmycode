@@ -6,6 +6,8 @@ from concurrent.futures import ThreadPoolExecutor
 from sklearn.ensemble import IsolationForest
 from joblib import Memory
 import time
+import sys
+import signal
 
 # Load anomaly configuration from the JSON file
 with open('anomaly_config.json', 'r') as config_file:
@@ -24,7 +26,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Modify the cache location to be a hidden file in the log location
+# Modify the cache location
 cache_location = os.path.join(log_location, '.cache')
 memory = Memory(location=cache_location, verbose=0)
 
@@ -35,26 +37,19 @@ data = pd.DataFrame(columns=['timestamp', 'count'])
 # Create a thread pool for parallel processing
 executor = ThreadPoolExecutor(max_workers=config['max_threads'])
 
-# Check if a pre-trained model file path is provided in the config
+# Check if a pre-trained model file path is provided
 if 'model_file_path' in config:
-    # Load a pre-trained Isolation Forest model from the specified file
     model = IsolationForest()
     model_file_path = config['model_file_path']
     model.load(model_file_path)
 else:
-    # Initialize a new Isolation Forest model
     model = IsolationForest()
 
 # Function to detect anomalies and take action
 def detect_anomalies(window_data):
     try:
-        # You can use the pre-trained Isolation Forest model for anomaly detection
         window_data['anomaly_score'] = model.decision_function(window_data[['count']])
-        
-        # Include the threshold value in the output DataFrame
         window_data['threshold'] = config['anomaly_score_threshold']
-        
-        # Pass the anomalies to the output module
         pass_to_output_module(window_data)
     except Exception as e:
         logger.error(f"An error occurred in the output module: {str(e)}")
@@ -62,14 +57,8 @@ def detect_anomalies(window_data):
 # Function to pass anomalies to the output module
 def pass_to_output_module(anomalies):
     try:
-        # You can replace this with your specific logic to send anomalies to the output module
-        # Example: output_module.stream_anomalies(anomalies)
-        # Example: output_module.send_to_kafka(anomalies)
-        # Example: output_module.send_to_druid(anomalies)
-        # Example: output_module.forward_to_superset(anomalies)
-        # ...
-
         logger.info(f"Streaming anomalies to output module: {anomalies}")
+        # Implement logic to stream anomalies to the output module
     except Exception as e:
         logger.error(f"An error occurred while streaming anomalies to the output module: {str(e)}")
 
@@ -77,54 +66,168 @@ def pass_to_output_module(anomalies):
 def cleanup_data():
     while True:
         try:
-            # Check if it's time to clean up data
             if (time.time() - data['timestamp'].min().timestamp()) >= config['cleanup_period_seconds']:
-                # Determine the timestamp to keep (e.g., the latest timestamp to retain)
                 timestamp_to_keep = time.time() - window_size
-                
-                # Clean up data older than the timestamp_to_keep
                 data.drop(data[data['timestamp'] < timestamp_to_keep].index, inplace=True)
         except Exception as e:
             logger.error(f"An error occurred during data cleanup: {str(e)}")
-        
-        # Sleep for a while before checking again
         time.sleep(config['cleanup_check_interval_seconds'])
 
-# Start the data cleanup thread if cleanup_period_seconds is specified
 if 'cleanup_period_seconds' in config:
     cleanup_thread = executor.submit(cleanup_data)
 
-# Start getting data from the chosen input module
-# Replace this section with your specific input module logic
+# Integration with Kafka Input Module
+import json
+import logging
+from confluent_kafka import Consumer, KafkaError
+
+# Configure logging
+logging.basicConfig(filename='kafka_stream.log', level=logging.ERROR)
+
+# Load configuration from config.json
+with open("config.json") as config_file:
+    config_data = json.load(config_file)
+
+# Extract configuration values
+data_frame_name = config_data["data_frame_name"]
+memory_threshold_percent = config_data["memory_threshold_percent"]
+auto_recovery = config_data.get("auto_recovery", True)
+
+# Initialize Kafka consumer with the remaining configuration
+kafka_config = {key: value for key, value in config_data.items() if key not in ["data_frame_name", "memory_threshold_percent", "auto_recovery"]}
+
+consumer = Consumer(kafka_config)
+
+# Get the topic from the configuration
+topic = kafka_config["topic"]
+
+# Subscribe to the Kafka topic
+consumer.subscribe([topic])
+
+# Initialize an in-memory table structure
+table = defaultdict(list)
+
+# Extract column names dynamically from the select statement
+select_statement = config_data["select_statement"].upper()
+select_columns = [col.strip() for col in select_statement.split("SELECT")[1].split("FROM")[0].split(",")]
+
+# Define the table name based on the Kafka topic
+table_name = topic
+
+# Function to update the table based on incoming data
+def update_table(key, value):
+    global data_frame_name
+    global table_name
+    
+    timestamp_column_s = value[config_data["timestamp_column"]]
+    other_columns = {col: value[col] for col in value if col != config_data["timestamp_column"]}
+    
+    timestamp_column = datetime.fromtimestamp(timestamp_column_s)
+    
+    window_start = timestamp_column - timedelta(seconds=config_data["window_interval_seconds"])
+    
+    table[key] = [(t, data) for t, data in table[key] if window_start <= datetime.strptime(t, config_data["timestamp_format"])]
+    
+    table[key].append((timestamp_column, other_columns))
+    
+    globals()[data_frame_name] = pd.DataFrame(aggregated_data, columns=select_columns)
+    
+    table_name = topic
+
+# Function to check and adjust memory usage
+def check_memory_usage():
+    memory_usage = psutil.virtual_memory().percent
+    if memory_usage > memory_threshold_percent:
+        logging.error(f"High memory usage detected: {memory_usage}%")
+        cleanup_data_frame()
+
+# Function to clean up the data frame
+def cleanup_data_frame():
+    global data_frame_name
+    global table_name
+    global table
+
+    last_key = list(table.keys())[-1]
+
+    for key in table:
+        if key != last_key:
+            if len(table[key]) > 2:
+                table[key] = table[key][-2:]
+    
+    aggregated_data = []
+    for key in table:
+        aggregated_data.extend(table[key])
+    
+    globals()[data_frame_name] = pd.DataFrame(aggregated_data, columns=select_columns)
+    
+    table_name = topic
+
+# Function to handle offsets and resume from the last processed offset
+def handle_offsets():
+    partitions = consumer.assignment()
+    for partition in partitions:
+        committed_offset = consumer.committed(partition)
+        if committed_offset is not None:
+            consumer.seek(partition, committed_offset.offset)
+
+# Function to dynamically adjust the number of consumer threads
+def dynamic_scaling():
+    global kafka_config
+    current_thread_count = kafka_config.get("num_threads", 1)
+    
+    if psutil.virtual_memory().percent > memory_threshold_percent:
+        new_thread_count = max(current_thread_count // 2, 1)
+    else:
+        new_thread_count = current_thread_count
+    
+    if new_thread_count != current_thread_count:
+        logging.info(f"Adjusting consumer threads: {current_thread_count} -> {new_thread_count}")
+        kafka_config["num_threads"] = new_thread_count
+        consumer.close()
+        consumer = Consumer(kafka_config)
+        consumer.subscribe([topic])
+
+# Timer for dynamic scaling check (every 3 minutes)
+scaling_timer = time.time()
+
+# Function to check for critical failures and initiate recovery
+def check_for_failures():
+    if critical_failure_detected and auto_recovery:
+        logging.error("Critical failure detected. Restarting...")
+        consumer.close()
+        restart_program()
+
+# Function to gracefully restart the program
+def restart_program():
+    python = sys.executable
+    os.execl(python, python, *sys.argv)
+
+# Continuously process Kafka messages
 while True:
-    try:
-        # Execute the code to retrieve pre-processed, aggregated data
-        # Replace this with the logic to fetch your data (timestamp, count) from the input module
-        timestamp, count = fetch_data_from_input_module()
+    check_memory_usage()
 
-        # Add the data point to the DataFrame
-        data = data.append({'timestamp': timestamp, 'count': count}, ignore_index=True)
+    msg_batch = consumer.consume(num_messages=100)
 
-        # Check if it's time to process the window
-        if (data['timestamp'].max() - data['timestamp'].min()) >= window_size:
-            # Extract the data within the window
-            window_data = data[(data['timestamp'] >= (data['timestamp'].max() - window_size))]
+    for msg in msg_batch:
+        if msg is None:
+            continue
+        if msg.error():
+            if msg.error().code() == KafkaError._PARTITION_EOF:
+                continue
+            else:
+                logging.error("Error while consuming message: {}".format(msg.error()))
+                break
 
-            # Use a thread from the thread pool for processing
-            result = detect_anomalies(window_data)
+        key = msg.key().decode('utf-8')
+        value = json.loads(msg.value().decode('utf-8'))
 
-            if result is not None:
-                # Pass the anomalies to the output module
-                pass_to_output_module(result)
+        update_table(key, value)
 
-            # Optionally, cache the data for future use if needed
-            @memory.cache
-            def cache_data(window_data):
-                return window_data
+        consumer.commit(msg)
 
-            # Cache the window data for future use
-            cached_data = cache_data(window_data)
-    except Exception as e:
-        logger.error(f"An error occurred in the input module: {str(e)}")
+    if msg_batch:
+        handle_offsets()
 
-# The main thread runs continuously until it is killed
+    if time.time() > scaling_timer:
+        dynamic_scaling()
+        scaling_timer = time.time()
