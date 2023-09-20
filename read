@@ -1,0 +1,41 @@
+# Kafka Streaming Consumer
+
+## Overview
+
+This Kafka streaming consumer is designed to consume data from one or more Kafka clusters, apply SQL-like filtering and aggregation, and store the results in an in-memory table. It is highly configurable, allowing you to adapt it to various use cases and resource constraints.
+
+## Features
+
+- Dynamic memory allocation for consumer threads based on memory usage.
+- SQL-like query language for filtering and aggregation.
+- Rolling buffer to limit the number of records per timestamp.
+- Automatic cleanup of in-memory data to manage memory consumption.
+- Logging with customizable log levels and file locations.
+- Graceful shutdown and handling of Kafka errors.
+
+## Prerequisites
+
+Before using this Kafka streaming consumer, make sure you have the following installed:
+
+- Python 3.x
+- Required Python packages (install with `pip install`):
+  - `psutil`
+  - `confluent-kafka`
+  - `pandas`
+  - `watchdog`
+
+## Configuration
+
+The behavior of the Kafka streaming consumer can be customized through two configuration files:
+
+- `config.json`: Contains general settings for the consumer, such as memory allocation, Kafka topic, select query, and log settings.
+
+- `cluster.json`: Defines Kafka cluster connections, including bootstrap servers, security settings (SASL_SSL), and certificate/key locations.
+
+## Usage
+
+1. Clone this repository:
+
+   ```bash
+   git clone https://github.com/your/repo.git
+   cd kafka-streaming-consumer
