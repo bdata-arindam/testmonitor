@@ -2,7 +2,6 @@ import streamlit as st
 import json
 import sqlite3
 import pandas as pd
-from pydruid.db import connect
 from sklearn.ensemble import IsolationForest
 from sklearn.neighbors import LocalOutlierFactor
 from sklearn.covariance import EllipticEnvelope
@@ -135,7 +134,7 @@ elif selected_tab == "Anomaly Detection":
     st.title("Anomaly Detection")
 
     # Load the stored Druid queries from the database
-    conn = sqlite3.connect('myapp.db')
+    conn = sqlite3.connect('metadata.db')
     cursor = conn.cursor()
     cursor.execute("SELECT id, query FROM druid_queries")
     query_list = cursor.fetchall()
