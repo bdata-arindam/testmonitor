@@ -1,0 +1,37 @@
+{
+    "druid": {
+      "host": "http://druid.example.com:8082",  // Replace with your Druid host and port
+      "user": "druid_user",                    // Replace with your Druid username
+      "password": "druid_password"             // Replace with your Druid password
+    },
+    "mounts": {
+      "single_mount": true,                    // Set to true if you have a single data mount, false for multiple
+      "mount_locations": [
+        "data_mount_1",                       // Replace with your data mount locations
+        "data_mount_2"
+      ]
+    },
+    "models": {
+      "Isolation Forest": {
+        "n_estimators": 100,                  // Number of base estimators in the ensemble
+        "max_samples": "auto",               // Number of samples to draw for each base estimator
+        "contamination": 0.1                 // Proportion of outliers in the dataset
+      },
+      "Local Outlier Factor": {
+        "n_neighbors": 20,                   // Number of neighbors to consider
+        "contamination": 0.1                // Proportion of outliers in the dataset
+      },
+      "Elliptic Envelope": {
+        "contamination": 0.1                 // Proportion of outliers in the dataset
+      },
+      "DBSCAN": {
+        "eps": 0.5,                         // Maximum distance between two samples to form a cluster
+        "min_samples": 5                    // Minimum number of samples in a cluster
+      },
+      "SVM": {
+        "kernel": "rbf",                    // Kernel function for SVM
+        "nu": 0.1                            // An upper bound on the fraction of training errors
+      }
+    }
+  }
+  
