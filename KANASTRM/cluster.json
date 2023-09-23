@@ -1,0 +1,24 @@
+{
+    "cluster1": {
+        "bootstrap.servers": "cluster1.example.com:9092",  // Kafka bootstrap servers for cluster1
+        "group.id": "group1",                              // Kafka consumer group ID for cluster1
+        "security.protocol": "SASL_SSL",                   // Security protocol for cluster1 (e.g., SASL_SSL)
+        "sasl.mechanism": "PLAIN",                         // SASL mechanism for cluster1 (e.g., PLAIN)
+        "sasl.username": "your_username1",                 // SASL username for cluster1
+        "sasl.password": "your_password1",                 // SASL password for cluster1
+        "ssl.ca.location": "/path/to/ca.crt1",             // CA certificate location for cluster1
+        "ssl.certificate.location": "/path/to/client.crt1", // Client certificate location for cluster1
+        "ssl.key.location": "/path/to/client.key1"         // Client key location for cluster1
+    },
+    "cluster2": {
+        "bootstrap.servers": "cluster2.example.com:9092",  // Kafka bootstrap servers for cluster2
+        "group.id": "group2",                              // Kafka consumer group ID for cluster2
+        "security.protocol": "SASL_SSL",                   // Security protocol for cluster2 (e.g., SASL_SSL)
+        "sasl.mechanism": "PLAIN",                         // SASL mechanism for cluster2 (e.g., PLAIN)
+        "sasl.username": "your_username2",                 // SASL username for cluster2
+        "sasl.password": "your_password2",                 // SASL password for cluster2
+        "ssl.ca.location": "/path/to/ca.crt2",             // CA certificate location for cluster2
+        "ssl.certificate.location": "/path/to/client.crt2", // Client certificate location for cluster2
+        "ssl.key.location": "/path/to/client.key2"         // Client key location for cluster2
+    }
+}

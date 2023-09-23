@@ -1,0 +1,28 @@
+{
+    "consumer_groups": [
+        {
+            "group_id": "group1",
+            "min_memory_allocation": 70,       // Minimum memory allocation percentage for group1
+            "memory_per_thread": 5,            // Memory consumed by each consumer thread in group1 (percentage)
+            "memory_check_interval": 30,       // Interval (in seconds) to check memory usage for group1
+            "num_threads": 4,                  // Number of initial consumer threads for group1
+            "topic": "your_topic1",            // Kafka topic to subscribe to for group1
+            "select_query": "SELECT * FROM your_topic1 WHERE timestamp >= '2023-09-20 00:00:00' AND timestamp < '2023-09-21 00:00:00'",
+            "log_file": "/path/to/consumer1.log",  // Location of the log file for group1
+            "log_level": "INFO",               // Log level for group1 (e.g., INFO, DEBUG)
+            "rolling_buffer_max_records": 10   // Maximum number of records to keep per timestamp in the rolling buffer for group1
+        },
+        {
+            "group_id": "group2",
+            "min_memory_allocation": 75,       // Minimum memory allocation percentage for group2
+            "memory_per_thread": 6,            // Memory consumed by each consumer thread in group2 (percentage)
+            "memory_check_interval": 30,       // Interval (in seconds) to check memory usage for group2
+            "num_threads": 6,                  // Number of initial consumer threads for group2
+            "topic": "your_topic2",            // Kafka topic to subscribe to for group2
+            "select_query": "SELECT * FROM your_topic2 WHERE timestamp >= '2023-09-20 00:00:00' AND timestamp < '2023-09-21 00:00:00'",
+            "log_file": "/path/to/consumer2.log",  // Location of the log file for group2
+            "log_level": "DEBUG",              // Log level for group2 (e.g., INFO, DEBUG)
+            "rolling_buffer_max_records": 15   // Maximum number of records to keep per timestamp in the rolling buffer for group2
+        }
+    ]
+}
