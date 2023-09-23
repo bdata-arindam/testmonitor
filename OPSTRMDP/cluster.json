@@ -1,0 +1,24 @@
+{
+    "cluster1": {
+        "bootstrap.servers": "cluster1.example.com:9092",
+        "group.id": "group1",
+        "security.protocol": "SASL_SSL",
+        "sasl.mechanism": "PLAIN",
+        "sasl.username": "your_username1",
+        "sasl.password": "your_password1",
+        "ssl.ca.location": "/path/to/ca.crt1",
+        "ssl.certificate.location": "/path/to/client.crt1",
+        "ssl.key.location": "/path/to/client.key1"
+    },
+    "cluster2": {
+        "bootstrap.servers": "cluster2.example.com:9092",
+        "group.id": "group2",
+        "security.protocol": "SASL_SSL",
+        "sasl.mechanism": "PLAIN",
+        "sasl.username": "your_username2",
+        "sasl.password": "your_password2",
+        "ssl.ca.location": "/path/to/ca.crt2",
+        "ssl.certificate.location": "/path/to/client.crt2",
+        "ssl.key.location": "/path/to/client.key2"
+    }
+}

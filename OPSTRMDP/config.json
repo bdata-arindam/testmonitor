@@ -1,0 +1,40 @@
+{
+    "clusters": {
+        "cluster1": {
+            "min_memory_allocation": 70,
+            "memory_per_thread": 5,
+            "memory_check_interval": 30,
+            "topics": {
+                "topic1": {
+                    "select_query": "SELECT * FROM topic1 WHERE timestamp >= '2023-09-20 00:00:00' AND timestamp < '2023-09-21 00:00:00'",
+                    "num_threads": 4
+                },
+                "topic2": {
+                    "select_query": "SELECT * FROM topic2 WHERE value > 100",
+                    "num_threads": 2
+                }
+            },
+            "log_file": "cluster1_consumer.log",
+            "log_level": "INFO",
+            "rolling_buffer_max_records": 10,
+            "output_module_enabled": true,
+            "max_memory_allocation": 90
+        },
+        "cluster2": {
+            "min_memory_allocation": 75,
+            "memory_per_thread": 6,
+            "memory_check_interval": 30,
+            "topics": {
+                "topic3": {
+                    "select_query": "SELECT * FROM topic3 WHERE timestamp >= '2023-09-20 00:00:00' AND timestamp < '2023-09-21 00:00:00'",
+                    "num_threads": 3
+                }
+            },
+            "log_file": "cluster2_consumer.log",
+            "log_level": "DEBUG",
+            "rolling_buffer_max_records": 15,
+            "output_module_enabled": true,
+            "max_memory_allocation": 85
+        }
+    }
+}

@@ -1,0 +1,177 @@
+import json
+import logging
+import threading
+from concurrent.futures import ThreadPoolExecutor
+from confluent_kafka import Consumer, KafkaError
+import pandas as pd
+import time
+import psutil
+import traceback
+
+# Global dictionary to store consumer threads
+consumer_threads = {}
+
+# Global dictionary to maintain a rolling buffer of records
+timestamp_buffer = {}
+
+# Function to process messages and apply dynamic filtering
+def process_message(msg, select_query, in_memory_table):
+    try:
+        message_data = json.loads(msg.value().decode('utf-8'))
+
+        # Parse the conditions from the SELECT query
+        conditions = select_query.split("WHERE")[1].strip()
+
+        # Construct a Python expression by converting SQL-like conditions
+        condition_expression = conditions.replace("AND", "and").replace("OR", "or").replace("=", "==")
+
+        # Evaluate the expression for each message
+        if eval(condition_expression, globals(), message_data):
+            in_memory_table.append(message_data)
+
+        timestamp = message_data.get('timestamp')
+
+        # Check if the timestamp is already in the buffer
+        if timestamp not in timestamp_buffer:
+            timestamp_buffer[timestamp] = []
+
+        # Add the message data to the buffer
+        timestamp_buffer[timestamp].append(message_data)
+
+        # Ensure the buffer does not exceed the maximum number of records per timestamp
+        max_records_per_timestamp = 10
+        if len(timestamp_buffer[timestamp]) > max_records_per_timestamp:
+            timestamp_buffer[timestamp].pop(0)  # Remove the oldest record
+    
+    except json.JSONDecodeError as e:
+        print("Error decoding JSON message: {}".format(e))
+
+# Function to configure logging
+def configure_logging(log_file):
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    log_handler = logging.FileHandler(log_file)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    log_handler.setFormatter(formatter)
+    logger.addHandler(log_handler)
+    return logger
+
+# Function to add or remove consumer threads
+def add_consumer_threads(num_threads_to_add):
+    global consumer_threads
+
+    # Lock to ensure thread-safe access to consumer_threads dictionary
+    lock = threading.Lock()
+
+    if num_threads_to_add > 0:
+        with lock:
+            for _ in range(num_threads_to_add):
+                # Create and start a new consumer thread
+                thread = threading.Thread(target=consume_messages, args=(cluster_name, consumer, select_query, in_memory_table))
+                thread.daemon = True
+                thread.start()
+                # Store the thread in the dictionary
+                consumer_threads[thread.ident] = thread
+    elif num_threads_to_add < 0:
+        with lock:
+            # Terminate and remove the specified number of consumer threads
+            num_threads_to_remove = abs(num_threads_to_add)
+            for _ in range(num_threads_to_remove):
+                if consumer_threads:
+                    _, thread = consumer_threads.popitem()  # Remove and get the last thread
+                    thread.join()  # Wait for the thread to finish
+
+                    # Clean up resources (close Kafka consumer, etc.)
+                    cleanup_consumer_resources(thread)
+
+# Function to clean up consumer resources
+def cleanup_consumer_resources(thread):
+    # Implement your logic to clean up resources associated with the consumer
+    # For example, you can close the Kafka consumer gracefully
+    consumer = consumers.get(thread.ident)
+    if consumer:
+        consumer.close()
+
+# Function to monitor memory usage
+def monitor_memory_usage():
+    while True:
+        current_memory_usage = psutil.virtual_memory().percent
+        if current_memory_usage < min_memory_allocation:
+            # Increase the number of consumer threads (e.g., by starting more threads)
+            num_threads_to_add = (min_memory_allocation - current_memory_usage) / memory_per_thread
+            num_threads_to_add = int(max(num_threads_to_add, 0))  # Ensure non-negative integer
+            add_consumer_threads(num_threads_to_add)
+        time.sleep(memory_check_interval)
+
+# Function to clean up the DataFrame
+def cleanup_dataframe(df, max_records_per_timestamp=10):
+    cleaned_df = pd.concat([df[df['timestamp'] == timestamp].tail(max_records_per_timestamp) for timestamp in df['timestamp'].unique()])
+    return cleaned_df
+
+# Function to print query result as a table with column names
+def print_result(result, select_query):
+    if select_query.startswith("SELECT "):
+        columns = [col.strip() for col in select_query.split("SELECT ")[1].split("FROM")[0].split(",")]
+        df = pd.DataFrame(result, columns=columns)
+        print(df)
+    else:
+        print("Invalid SELECT statement format: ", select_query)
+
+# Load configuration from config.json
+config_file_path = "config.json"
+cluster_file_path = "cluster.json"
+
+with open(config_file_path, 'r') as config_file:
+    config = json.load(config_file)
+
+with open(cluster_file_path, 'r') as cluster_file:
+    cluster_config = json.load(cluster_file)
+
+# Sample values (Replace with your actual values)
+min_memory_allocation = config.get("min_memory_allocation", 70)  # Minimum memory allocation percentage
+memory_per_thread = config.get("memory_per_thread", 5)  # Memory consumed by each consumer thread
+memory_check_interval = config.get("memory_check_interval", 30)  # Interval to check memory usage (seconds)
+topic = config.get("topic", "your_topic")
+select_query = config.get("select_query", "SELECT * FROM your_topic WHERE timestamp >= '2023-09-20 00:00:00' AND timestamp < '2023-09-21 00:00:00'")
+
+# Create Kafka consumer instances for each cluster
+consumers = {}
+in_memory_table = []
+
+for cluster_name, cluster_params in cluster_config.items():
+    consumer = Consumer({
+        **cluster_params,
+        **config,
+    })
+
+    consumers[cluster_name] = consumer
+
+    # Subscribe to the topic for this cluster
+    consumer.subscribe([topic])
+
+# Create a ThreadPoolExecutor with multiple threads
+num_threads = config.get("num_threads", 4)  # Adjust as needed
+executor = ThreadPoolExecutor(max_workers=num_threads)
+
+# Start the memory usage monitoring thread
+memory_monitor_thread = threading.Thread(target=monitor_memory_usage)
+memory_monitor_thread.daemon = True
+memory_monitor_thread.start()
+
+# Start consuming messages for each cluster
+for cluster_name, consumer in consumers.items():
+    thread = threading.Thread(target=consume_messages, args=(cluster_name, consumer, select_query, in_memory_table))
+    thread.daemon = True
+    thread.start()
+    consumer_threads[thread.ident] = thread
+
+try:
+    while True:
+        # Continuously process messages
+        pass
+
+except KeyboardInterrupt:
+    print('Interrupted, closing consumers...')
+finally:
+    for consumer in consumers.values():
+        consumer.close()
