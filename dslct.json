@@ -1,7 +1,0 @@
-{
-  "select_queries": {
-    "query1": "SELECT column1, column2, COUNT(*) AS count FROM your_topic WHERE condition1 GROUP BY column1, column2",
-    "query2": "SELECT column1, COUNT(*) AS count FROM your_topic WHERE condition2 GROUP BY column1",
-    "default": "SELECT * FROM your_topic WHERE default_condition"
-  }
-}
