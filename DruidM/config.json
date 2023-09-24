@@ -1,0 +1,50 @@
+{
+    "log_file": "metrics.log",
+    "execution_interval_seconds": 3600,
+    "recovery_interval_seconds": 300,
+    "email": {
+      "sender_email": "your_email@example.com",
+      "receiver_email": "receiver_email@example.com",
+      "smtp_server": "smtp.example.com"
+    },
+    "druid_clusters": [
+      {
+        "name": "Cluster1",
+        "urls": [
+          "https://cluster1.example.com",
+          "https://cluster1-2.example.com"
+        ],
+        "username": "cluster1_user",
+        "password": "cluster1_password",
+        "datasources": [
+          {
+            "name": "datasource1",
+            "last_10_min_count_query": "SELECT COUNT(*) FROM datasource1 WHERE timestamp BETWEEN CURRENT_TIMESTAMP - INTERVAL '10' MINUTES AND CURRENT_TIMESTAMP"
+          },
+          {
+            "name": "datasource2",
+            "last_10_min_count_query": "SELECT COUNT(*) FROM datasource2 WHERE timestamp BETWEEN CURRENT_TIMESTAMP - INTERVAL '10' MINUTES AND CURRENT_TIMESTAMP"
+          }
+        ]
+      },
+      {
+        "name": "Cluster2",
+        "urls": [
+          "https://cluster2.example.com",
+          "https://cluster2-2.example.com"
+        ],
+        "username": "cluster2_user",
+        "password": "cluster2_password",
+        "datasources": [
+          {
+            "name": "datasource3",
+            "last_10_min_count_query": "SELECT COUNT(*) FROM datasource3 WHERE timestamp BETWEEN CURRENT_TIMESTAMP - INTERVAL '10' MINUTES AND CURRENT_TIMESTAMP"
+          },
+          {
+            "name": "datasource4",
+            "last_10_min_count_query": "SELECT COUNT(*) FROM datasource4 WHERE timestamp BETWEEN CURRENT_TIMESTAMP - INTERVAL '10' MINUTES AND CURRENT_TIMESTAMP"
+          }
+        ]
+      }
+    ]
+  }  
