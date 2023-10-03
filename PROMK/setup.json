@@ -1,0 +1,9 @@
+{
+    "prometheus_url": "http://your-prometheus-url",
+    "port": 9090,
+    "https": true,
+    "username": "your-username",
+    "password": "your-password",
+    "interval_seconds": 60,
+    "log_file": "main_program.log"
+}

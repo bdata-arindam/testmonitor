@@ -1,0 +1,23 @@
+{
+    "bootstrap_servers": "your_kafka_broker_url:9092",
+    "producers": [
+        {
+            "topics": ["single_topic"],
+            "security_protocol": "SASL_SSL",
+            "sasl_mechanism": "GSSAPI",
+            "sasl_kerberos_keytab": "/path/to/your/single_topic_keytab.keytab",
+            "ssl_truststore_location": "/path/to/your/single_topic_truststore.jks",
+            "ssl_keystore_location": "/path/to/your/single_topic_keystore.jks",
+            "ssl_keystore_password": "single_topic_keystore_password"
+        },
+        {
+            "topics": ["multi_topic_1", "multi_topic_2"],
+            "security_protocol": "SASL_SSL",
+            "sasl_mechanism": "GSSAPI",
+            "sasl_kerberos_keytab": "/path/to/your/multi_topic_keytab.keytab",
+            "ssl_truststore_location": "/path/to/your/multi_topic_truststore.jks",
+            "ssl_keystore_location": "/path/to/your/multi_topic_keystore.jks",
+            "ssl_keystore_password": "multi_topic_keystore_password"
+        }
+    ]
+}

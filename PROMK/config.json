@@ -1,0 +1,12 @@
+{
+    "queries": [
+        {
+            "name": "query_name_1",
+            "query": "your-prometheus-query-1"
+        },
+        {
+            "name": "query_name_2",
+            "query": "your-prometheus-query-2"
+        }
+    ]
+}
