@@ -1,0 +1,21 @@
+{
+    "topic": "your_kafka_topic",
+    "server": "your_kafka_broker:9092",
+    "group_id": "your_consumer_group",
+    "security_protocol": "SASL_SSL",
+    "sasl_mechanism": "GSSAPI",
+    "sasl_kerberos_service_name": "kafka",
+    "sasl_kerberos_keytab": "/path/to/your/keytab.keytab",
+    "ssl_check_hostname": false,
+    "ssl_keystore_location": "/path/to/your/keystore.jks",
+    "ssl_keystore_password": "your_keystore_password",
+    "ssl_truststore_location": "/path/to/your/truststore.jks",
+    "ssl_truststore_password": "your_truststore_password",
+    "num_threads": 4,
+    "min_memory_percentage": 10,
+    "max_memory_percentage": 80,
+    "log_file_location": "/path/to/your/log/directory",
+    "log_file_name": "exporter.log",
+    "delay_seconds": 20  
+  }
+  

@@ -1,0 +1,7 @@
+{
+    "sql_query": "SELECT key as aggregation_key, value FROM kafka_data WHERE timestamp >= 'start_time'",
+    "aggregation_interval_minutes": 5,
+    "start_time": "2023-01-01T00:00:00Z",
+    "include_message_key": true
+  }
+  

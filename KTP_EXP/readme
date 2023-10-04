@@ -1,0 +1,115 @@
+Certainly! Here's the updated README file with instructions on setting up and running the Kafka to Prometheus exporter, including process metrics export:
+
+---
+
+# Kafka to Prometheus Exporter
+
+## Overview
+
+This repository contains a Python script that exports aggregated time-series data from a Kafka topic to Prometheus. It allows you to process Kafka messages, perform aggregations, and expose the data as Prometheus metrics. Additionally, it exports process metrics for monitoring the exporter's own execution, including CPU and memory utilization.
+
+## Prerequisites
+
+Before running the exporter, make sure you have the following prerequisites installed and configured:
+
+1. **Python**: You'll need Python 3.x installed on your system.
+
+2. **Python Packages**: Install the required Python packages using `pip`:
+   ```bash
+   pip install confluent-kafka prometheus_client psutil
+   ```
+
+3. **Kerberos Configuration (if using Kerberos)**: If your Kafka cluster uses Kerberos for authentication, ensure that the necessary Kerberos configurations are set up on your system.
+
+4. **Kafka Configuration**: Prepare a `kafka.json` configuration file with your Kafka and SSL settings. Here's an example `kafka.json`:
+
+   ```json
+   {
+     "topic": "your_kafka_topic",
+     "server": "your_kafka_broker:9092",
+     "group_id": "your_consumer_group",
+     "security_protocol": "SASL_SSL",
+     "sasl_mechanism": "GSSAPI",
+     "sasl_kerberos_service_name": "kafka",
+     "sasl_kerberos_keytab": "/path/to/your/keytab.keytab",
+     "ssl_check_hostname": false,
+     "ssl_keystore_location": "/path/to/your/keystore.jks",
+     "ssl_keystore_password": "your_keystore_password",
+     "ssl_truststore_location": "/path/to/your/truststore.jks",
+     "ssl_truststore_password": "your_truststore_password",
+     "num_threads": 4,
+     "min_memory_percentage": 10,
+     "max_memory_percentage": 80,
+     "log_file_location": "/path/to/your/log/directory",
+     "log_file_name": "exporter.log",
+     "delay_seconds": 20  // Specify the delay configuration here
+   }
+   ```
+
+5. **Query Configuration**: Prepare a `query.json` configuration file with your SQL query and other parameters. Here's an example `query.json`:
+
+   ```json
+   {
+     "sql_query": "SELECT key as aggregation_key, value FROM kafka_data WHERE timestamp >= 'start_time'",
+     "aggregation_interval_minutes": 5,
+     "start_time": "2023-01-01T00:00:00Z",
+     "include_message_key": true
+   }
+   ```
+
+6. **Prometheus Configuration**: Prepare a `prom.json` configuration file with your Prometheus server details. Here's an example `prom.json`:
+
+   ```json
+   {
+     "prometheus_url": "https://your-prometheus-server:9090",
+     "prometheus_username": "your_username",  // Optional: Prometheus username
+     "prometheus_password": "your_password",  // Optional: Prometheus password
+     "prometheus_port": 9090                 // Optional: Prometheus port (default is 9090)
+   }
+   ```
+
+## Running the Exporter
+
+To start the Kafka to Prometheus exporter and export process metrics, follow these steps:
+
+1. Make sure you have all the prerequisites mentioned above installed and configured.
+
+2. Open a terminal and navigate to the directory containing the script and configuration files.
+
+3. Run the start script to start the exporter:
+   ```bash
+   ./start_exporter.sh
+   ```
+
+   This will start the exporter in the background. You can check the exporter's logs in `exporter.log`.
+
+4. The exporter will continuously process Kafka messages, expose them as Prometheus metrics, and export its own process metrics, including CPU and memory utilization, to Prometheus. You can configure the exporter's behavior by updating the JSON configuration files.
+
+## Stopping the Exporter
+
+To stop the Kafka to Prometheus exporter, follow these steps:
+
+1. Open a terminal and navigate to the directory containing the script and configuration files.
+
+2. Run the stop script to stop the exporter:
+   ```bash
+   ./stop_exporter.sh
+   ```
+
+   This will stop the exporter gracefully.
+
+3. You can also manually check and terminate the exporter process if needed.
+
+## Customization
+
+- You can customize the exporter's behavior by updating the JSON configuration files: `kafka.json`, `query.json`, and `prom.json`.
+
+- You can add monitoring, alerting, or additional logic to the start and stop scripts (`start_exporter.sh` and `stop_exporter.sh`) as needed for your production environment.
+
+## Troubleshooting
+
+If you encounter issues or need further assistance, please refer to the exporter's logs (`exporter.log`) for error messages and check your configuration settings.
+
+---
+
+With these instructions, you should be able to set up and run the Kafka to Prometheus exporter in your production environment, including process metrics export for monitoring. If you encounter any issues or have additional requirements, feel free to customize the code and configuration files accordingly.

@@ -1,0 +1,7 @@
+{
+    "prometheus_url": "https://your-prometheus-server:9090",
+    "prometheus_username": "your_username", 
+    "prometheus_password": "your_password",  
+    "prometheus_port": 9090                 
+  }
+  
